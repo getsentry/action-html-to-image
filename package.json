@@ -38,7 +38,9 @@
   "dependencies": {
     "@actions/core": "^1.2.0",
     "@actions/glob": "^0.1.0",
-    "puppeteer": "^5.2.1"
+    "@types/puppeteer": "^3.0.1",
+    "puppeteer": "^5.2.1",
+    "typescript": "^3.9.7"
   },
   "devDependencies": {
     "@types/jest": "^24.0.23",
@@ -56,7 +58,6 @@
     "js-yaml": "^3.13.1",
     "lint-staged": "^10.2.11",
     "prettier": "^1.19.1",
-    "ts-jest": "^24.2.0",
-    "typescript": "^3.6.4"
+    "ts-jest": "^24.2.0"
   }
 }

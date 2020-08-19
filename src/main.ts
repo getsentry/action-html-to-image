@@ -1,66 +1,46 @@
-import { promises as fs } from "fs";
-import path from "path";
+import path from 'path';
 
-import * as glob from "@actions/glob";
-import * as core from "@actions/core";
+import * as glob from '@actions/glob';
+import * as core from '@actions/core';
 
-import puppeteer from "puppeteer";
+import puppeteer from 'puppeteer';
+
+import {getCss} from './getCss';
+import {render} from './render';
 
 const DEFAULT_CONFIG_CI = {
   launch: {
     args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage"
-    ]
+      '--font-render-hinting=none',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--allow-file-access-from-files',
+    ],
   },
-  exitOnPageError: true
+  exitOnPageError: true,
 };
 
 async function run(): Promise<void> {
   try {
-    const basePath = core.getInput("base-path");
-    const cssPath = core.getInput("css-path");
+    const basePath = core.getInput('base-path');
+    const cssPath = core.getInput('css-path');
 
     const globber = await glob.create(`${basePath}/**/*.html`);
     const files = await globber.glob();
 
     const browser = await puppeteer.launch(DEFAULT_CONFIG_CI.launch);
     const page = await browser.newPage();
-
-    if (cssPath) {
-      let css = await fs.readFile(cssPath, "utf8");
-      css = css.replace(/[\r\n]+/g, "");
-
-      await page.addStyleTag({
-        content: `${css}
-        #__vs_canvas {
-          position: relative;
-        }
-        `
-      });
-    }
+    const css = await getCss(
+      path.resolve(process.env.GITHUB_WORKSPACE || '', cssPath)
+    );
 
     for (const file of files) {
-      const slug = path.basename(file, ".html");
-      const imagePath = path.resolve(basePath, `${slug}.png`);
-      const html = await fs.readFile(file, "utf8");
-      await page.setContent(html);
-      const el = await page.$("#__vs_canvas");
-      try {
-        await (el ? el : page).screenshot({
-          path: imagePath
-        });
-      } catch (err) {
-        console.error(new Error(`${slug}: ${err}`));
-        if (err.message === "Node has 0 height.") {
-          console.warn("...snapshotting full page instead");
-          await page.screenshot({
-            path: imagePath
-          });
-          return;
-        }
-      }
+      await render({
+        page,
+        file,
+        css,
+      });
     }
 
     await browser.close();

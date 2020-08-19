@@ -7,5 +7,5 @@ inputs:
   css-path:
     description: 'path to custom css to inject'
 runs:
-  using: 'node12'
-  main: 'dist/index.js'
+  using: 'docker'
+  image: 'Dockerfile'
