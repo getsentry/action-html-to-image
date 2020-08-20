@@ -5908,62 +5908,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = __webpack_require__(747);
 const path_1 = __importDefault(__webpack_require__(622));
 const glob = __importStar(__webpack_require__(281));
 const core = __importStar(__webpack_require__(470));
 const puppeteer_1 = __importDefault(__webpack_require__(899));
+const getCss_1 = __webpack_require__(339);
+const render_1 = __webpack_require__(897);
 const DEFAULT_CONFIG_CI = {
     launch: {
         args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage"
-        ]
+            '--font-render-hinting=none',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--allow-file-access-from-files',
+        ],
     },
-    exitOnPageError: true
+    exitOnPageError: true,
 };
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const basePath = core.getInput("base-path");
-            const cssPath = core.getInput("css-path");
+            const basePath = core.getInput('base-path');
+            const cssPath = core.getInput('css-path');
             const globber = yield glob.create(`${basePath}/**/*.html`);
             const files = yield globber.glob();
             const browser = yield puppeteer_1.default.launch(DEFAULT_CONFIG_CI.launch);
             const page = yield browser.newPage();
-            if (cssPath) {
-                let css = yield fs_1.promises.readFile(cssPath, "utf8");
-                css = css.replace(/[\r\n]+/g, "");
-                yield page.addStyleTag({
-                    content: `${css}
-        #__vs_canvas {
-          position: relative;
-        }
-        `
-                });
-            }
+            const css = yield getCss_1.getCss(path_1.default.resolve(process.env.GITHUB_WORKSPACE || '', cssPath));
             for (const file of files) {
-                const slug = path_1.default.basename(file, ".html");
-                const imagePath = path_1.default.resolve(basePath, `${slug}.png`);
-                const html = yield fs_1.promises.readFile(file, "utf8");
-                yield page.setContent(html);
-                const el = yield page.$("#__vs_canvas");
-                try {
-                    yield (el ? el : page).screenshot({
-                        path: imagePath
-                    });
-                }
-                catch (err) {
-                    console.error(new Error(`${slug}: ${err}`));
-                    if (err.message === "Node has 0 height.") {
-                        console.warn("...snapshotting full page instead");
-                        yield page.screenshot({
-                            path: imagePath
-                        });
-                        return;
-                    }
-                }
+                yield render_1.render({
+                    page,
+                    file,
+                    css,
+                });
             }
             yield browser.close();
         }
@@ -11954,6 +11932,40 @@ class Target {
     }
 }
 exports.Target = Target;
+
+
+/***/ }),
+
+/***/ 339:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getCss = void 0;
+const fs_1 = __webpack_require__(747);
+function getCss(file) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!file) {
+            return '';
+        }
+        const cssFromFile = yield fs_1.promises.readFile(file, 'utf8');
+        return `${cssFromFile.replace(/[\r\n]+/g, '')}
+  #__vs_canvas {
+    position: relative;
+  }`;
+    });
+}
+exports.getCss = getCss;
 
 
 /***/ }),
@@ -28005,6 +28017,60 @@ module.exports = function (xs, fn) {
 var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
+
+
+/***/ }),
+
+/***/ 897:
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.render = void 0;
+const path_1 = __importDefault(__webpack_require__(622));
+function render({ page, file, css }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const basePath = path_1.default.dirname(file);
+        const slug = path_1.default.basename(file, '.html');
+        const imagePath = path_1.default.resolve(basePath, `${slug}.png`);
+        yield page.goto(`file://${file}`, { waitUntil: 'networkidle0' });
+        if (css) {
+            yield page.addStyleTag({
+                content: css,
+            });
+        }
+        const el = yield page.$('#__vs_canvas');
+        try {
+            yield (el ? el : page).screenshot({
+                path: imagePath,
+            });
+        }
+        catch (err) {
+            console.error(new Error(`${slug}: ${err}`));
+            if (err.message === 'Node has 0 height.') {
+                console.warn('...snapshotting full page instead');
+                yield page.screenshot({
+                    path: imagePath,
+                });
+            }
+        }
+        console.log(`finished ${slug}`);
+    });
+}
+exports.render = render;
 
 
 /***/ }),
