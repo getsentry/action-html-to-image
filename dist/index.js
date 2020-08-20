@@ -5934,15 +5934,39 @@ function run() {
             const globber = yield glob.create(`${basePath}/**/*.html`);
             const files = yield globber.glob();
             const browser = yield puppeteer_1.default.launch(DEFAULT_CONFIG_CI.launch);
-            const page = yield browser.newPage();
+            yield browser.newPage();
+            yield browser.newPage();
             const css = yield getCss_1.getCss(path_1.default.resolve(process.env.GITHUB_WORKSPACE || '', cssPath));
-            for (const file of files) {
-                yield render_1.render({
-                    page,
-                    file,
-                    css,
-                });
+            const pages = yield browser.pages();
+            for (let i = 0; i < files.length; i += 3) {
+                const promises = [
+                    render_1.render({
+                        page: pages[i % 3],
+                        file: files[i],
+                        css,
+                    }),
+                    i + 1 < files.length &&
+                        render_1.render({
+                            page: pages[(i + 1) % 3],
+                            file: files[i + 1],
+                            css,
+                        }),
+                    i + 2 < files.length &&
+                        render_1.render({
+                            page: pages[(i + 2) % 3],
+                            file: files[i + 2],
+                            css,
+                        }),
+                ].filter(Boolean);
+                yield Promise.all(promises);
             }
+            // for (const file of files) {
+            // await render({
+            // page,
+            // file,
+            // css,
+            // });
+            // }
             yield browser.close();
         }
         catch (error) {
