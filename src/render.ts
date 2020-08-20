@@ -15,6 +15,7 @@ export async function render({page, file, css}: Params): Promise<void> {
       .getEntries()
       .forEach(entry => console.log(`${entry.name} -> ${entry.duration}`));
     performance.clearMarks();
+    performance.clearMeasures();
   });
   obs.observe({entryTypes: ['measure']});
   performance.mark('start');
