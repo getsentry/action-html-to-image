@@ -5926,6 +5926,7 @@ const DEFAULT_CONFIG_CI = {
     },
     exitOnPageError: true,
 };
+const MAX_PAGES = 5;
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -5934,39 +5935,19 @@ function run() {
             const globber = yield glob.create(`${basePath}/**/*.html`);
             const files = yield globber.glob();
             const browser = yield puppeteer_1.default.launch(DEFAULT_CONFIG_CI.launch);
-            yield browser.newPage();
-            yield browser.newPage();
+            yield Promise.all([...Array(MAX_PAGES - 1)].map(() => __awaiter(this, void 0, void 0, function* () { return browser.newPage(); })));
             const css = yield getCss_1.getCss(path_1.default.resolve(process.env.GITHUB_WORKSPACE || '', cssPath));
             const pages = yield browser.pages();
-            for (let i = 0; i < files.length; i += 3) {
-                const promises = [
+            for (let i = 0; i < files.length; i += MAX_PAGES) {
+                yield Promise.all([...Array(MAX_PAGES)]
+                    .map((_, j) => i + j < files.length &&
                     render_1.render({
-                        page: pages[i % 3],
-                        file: files[i],
+                        page: pages[(i + j) % MAX_PAGES],
+                        file: files[i + j],
                         css,
-                    }),
-                    i + 1 < files.length &&
-                        render_1.render({
-                            page: pages[(i + 1) % 3],
-                            file: files[i + 1],
-                            css,
-                        }),
-                    i + 2 < files.length &&
-                        render_1.render({
-                            page: pages[(i + 2) % 3],
-                            file: files[i + 2],
-                            css,
-                        }),
-                ].filter(Boolean);
-                yield Promise.all(promises);
+                    }))
+                    .filter(Boolean));
             }
-            // for (const file of files) {
-            // await render({
-            // page,
-            // file,
-            // css,
-            // });
-            // }
             yield browser.close();
         }
         catch (error) {
