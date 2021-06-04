@@ -1,4 +1,4 @@
-name: 'jest-visual-snapshop'
+name: 'action-html-to-image'
 description: 'Renders images from HTML'
 author: 'Sentry'
 inputs:
@@ -8,4 +8,4 @@ inputs:
     description: 'path to custom css to inject'
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'docker://ghcr.io/getsentry/action-html-to-image:latest'
