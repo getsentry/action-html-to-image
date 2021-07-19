@@ -1,4 +1,4 @@
-FROM buildkite/puppeteer:5.2.1
+FROM buildkite/puppeteer:10.0.0
 # FROM node:12.18.3-buster-slim@sha256:dd6aa3ed10af4374b88f8a6624aeee7522772bb08e8dd5e917ff729d1d3c3a4f
 
 # # source https://github.com/buildkite/docker-puppeteer/blob/master/Dockerfile
