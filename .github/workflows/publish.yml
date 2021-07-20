@@ -30,6 +30,4 @@ jobs:
     - name: Publish to latest tag
       if: github.ref == 'refs/heads/main'
       run: |
-        echo ${{ github.ref }}
-        echo $GITHUB_REF
-        # docker push ghcr.io/${{ github.repository }}:latest
+        docker push ghcr.io/${{ github.repository }}:latest
