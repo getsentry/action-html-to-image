@@ -17,8 +17,9 @@ FROM buildkite/puppeteer:10.0.0
 
 COPY . .
 
-RUN  yarn install --production
-
-RUN  yarn build
+RUN cat package.json
+RUN yarn install --production
+RUN yarn tsc --version
+RUN yarn build
 
 ENTRYPOINT ["node", "/lib/main.js"]
