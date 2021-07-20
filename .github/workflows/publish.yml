@@ -1,9 +1,6 @@
 name: Build and publish docker image
 
-on:
-  push:
-    branches:
-      - main
+on: push
 
 jobs:
   publish:
@@ -29,4 +26,8 @@ jobs:
     - name: Publish docker image
       run: |
         docker push ghcr.io/${{ github.repository }}:$GITHUB_SHA
+
+    - name: Publish to latest tag
+      if: github.ref == 'refs/heads/main'
+      run: |
         docker push ghcr.io/${{ github.repository }}:latest
