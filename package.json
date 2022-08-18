@@ -36,7 +36,7 @@
     ]
   },
   "dependencies": {
-    "@actions/core": "^1.2.6",
+    "@actions/core": "^1.9.1",
     "@actions/glob": "^0.1.0",
     "@types/puppeteer": "^5.4.4",
     "@types/node": "^12.7.12",
